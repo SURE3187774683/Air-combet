@@ -1,12 +1,18 @@
 import numpy as np
 import torch
 import pandas as pd
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import os
 from env_fine import UavEnv
 import time
 from statistics import blue_brain
+from tensorboardX import SummaryWriter
+# Check if GPU is available
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+writer = SummaryWriter()
 TARGET_UPDATE = 4  #Update frequency of the target network
 def train():
     env = UavEnv()
@@ -56,10 +62,12 @@ def train():
             dqn_red.store_transition(observation, action1, reward, observation_, done)
             observation = observation_
             dqn_red.learn()
+            # Move the DQN agent to the GPU
+            dqn_red.policy_net = dqn_red.policy_net.to(device)
+            dqn_red.target_net = dqn_red.target_net.to(device)
             ep_reward += reward
             if (episode + 1) % TARGET_UPDATE == 0:  # target network update
                 dqn_red.target_net.load_state_dict(dqn_red.policy_net.state_dict())
-
 
             if done == True or step == max_step - 1 or suc == True or uns == True:
                 env.get_reward(reward)
@@ -68,13 +76,16 @@ def train():
                 d.append(done)
                 print('episode：', episode, 'step:', step, 'reward：', ep_reward, 'Out of safety range：', done)
                 reward_all.append(ep_reward)
+                # 记录episode奖励到TensorBoard
+                writer.add_scalar('Episode Reward', ep_reward, episode)
 
             if done == True or suc == True or uns == True:
                 break
-    # torch.save(dqn_red, 'net_combat2.pkl')
-    # print('DQN saved')
+    torch.save(dqn_red, 'net_combat2.pkl')
+    print('DQN saved')
 
     plt.plot(np.arange(len(reward_all)), reward_all)
     plt.show()
+    writer.close()
 if __name__ == '__main__':
     train()
