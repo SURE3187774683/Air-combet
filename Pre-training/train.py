@@ -2,11 +2,16 @@ from DQN import DQN
 from env_pre import Uav_Env
 import pandas as pd
 import numpy as np
+#import matplotlib
+#matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import time
 import torch
 import random
 import os
+
+# Check if GPU is available
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 TARGET_UPDATE = 4  #Update frequency of the target network
 
@@ -28,7 +33,7 @@ def train():
     dqn = DQN()
     max_step = 40   #Maximum steps per episode
     reward_all = []
-    for episode in range(1,300):
+    for episode in range(1,3000):
         observation,ter,suc,uns= env.reset()  #Initial episode, reset the scene
         s_store = []
         xdata = []
@@ -41,9 +46,13 @@ def train():
         for step in range(max_step):
             while True:
                 observation = np.array(observation)
+                observation = observation
+
                 action1 = dqn.choose_action(observation)  #choose_action function gives actions based on observations
+
                 break
             observation_,  reward, RF, suc,uns, done = env.step(action1) #The agent obtains information such as status and rewards at the next moment
+
             #state1 = env.get_state()
             if RF ==1 :
                 done =True
@@ -54,6 +63,10 @@ def train():
             observation = observation_
             dqn.learn()
             ep_reward += reward
+            # Move the DQN agent to the GPU
+            dqn.policy_net = dqn.policy_net.to(device)
+            dqn.target_net = dqn.target_net.to(device)
+
             if (episode + 1) % TARGET_UPDATE == 0:  #Agent Target Network Update
                 dqn.target_net.load_state_dict(dqn.policy_net.state_dict())
 

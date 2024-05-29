@@ -201,8 +201,16 @@ class Uav_Env(object):
 
         return info, self.terminal,self.success,self.unsuccess
 
-    def draw(self, x, y, z, xb, yb, zb):
-
+    def draw(self, x, y, z, xb, yb, zb):       
+        mpl.rcParams['legend.fontsize'] = 10
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
+        ax.scatter3D(0, 0, 4000, color="black", alpha=1, s=20, label='Starting Point')
+        ax.scatter3D(8000, 8000, 4000, color="green", alpha=1, s=20, label='Destination')
+        ax.plot(x.values.flatten(), y.values.flatten(), z.values.flatten(), color="red", label='UAV Path')
+        ax.plot(xb.values.flatten(), yb.values.flatten(), zb.values.flatten(), color="blue", label='Boundary')
+        ax.legend()
+        plt.show()
         # fig = plt.figure(figsize=(10, 7))
         # ax = plt.axes(projection='3d')
         # ax.scatter3D(0, 0, 4000, color="black", alpha=1, s=20)
@@ -212,17 +220,3 @@ class Uav_Env(object):
         # plt.title("simple 3D scatter plot")
         # plt.show()
         # plt.close()
-        mpl.rcParams['legend.fontsize'] = 10
-        fig = plt.figure()
-        ax = fig.add_subplot(projection = '3d')
-        ax.scatter3D(0, 0, 4000, color="black", alpha=1, s=20)
-        ax.scatter3D(8000, 8000, 4000, color="green", alpha=1, s=20)
-        ax.plot(x.values.flatten(),y.values.flatten(),z.values.flatten(),color="red")
-        ax.plot(xb.values.flatten(), yb.values.flatten(), zb.values.flatten(),color="blue")
-        ax.legend()
-        plt.show()
-
-
-
-
-
