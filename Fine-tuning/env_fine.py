@@ -35,7 +35,6 @@ class UavEnv(object):
 
         self.r = []
         self.Failr = []
-
     
 
     def step(self, action1, action2):
@@ -174,7 +173,7 @@ class UavEnv(object):
         else:
             rf = 0
 
-        # 角度奖励函数#!!!
+        # 角度奖励函数
         if self.qb > self.qr and np.abs(self.qb) > self.angle1:
             if self.d0 > 5000:
                 ra = (self.qb - self.qr) * np.exp(-(self.d0 - 5000) * (self.d0 - 5000) / (5000 * 5000))

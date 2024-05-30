@@ -75,9 +75,7 @@ class blue_brain(object):
             v_best = state_blue[0]
 
 
-
         f_v = state_red[0]/v_best*np.exp(-((2*np.abs(state_red[0]-v_best))/v_best))
-
 
 
         if h_best<=delh<=h_best+100:
@@ -128,17 +126,3 @@ class blue_brain(object):
             action = np.argmax(mq_column0)
 
         return action
-
-
-
-
-
-
-
-
-
-
-
-
-
-

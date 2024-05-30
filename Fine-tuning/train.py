@@ -1,28 +1,32 @@
 import numpy as np
 import torch
 import pandas as pd
-import matplotlib
-matplotlib.use('TkAgg')
+#import matplotlib
+#matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import os
 from env_fine import UavEnv
 import time
 from statistics import blue_brain
 from tensorboardX import SummaryWriter
-# Check if GPU is available
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-writer = SummaryWriter()
-TARGET_UPDATE = 4  #Update frequency of the target network
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #调用GPU
+
+writer = SummaryWriter() # 将Tensorboard记录在文件中
+
+TARGET_UPDATE = 4  # 目标网络的更新频率
+
 def train():
     env = UavEnv()
-    max_step = 40
-    reward_all = []
+    max_step = 40 # 每个回合的最大步数
+    reward_all = [] # 所有回合的奖励
     r = []
     epi = []
     step = []
     rew = []
     d = []
+    
+    # 载入预训练的模型
     dqn_red = torch.load('/home/sure/RL-code/air_combat/Pre-training/pre_training_net.pkl')
     statistic = blue_brain
 
@@ -74,18 +78,24 @@ def train():
                 #step.append(j)
                 rew.append(ep_reward)
                 d.append(done)
-                print('episode：', episode, 'step:', step, 'reward：', ep_reward, 'Out of safety range：', done)
                 reward_all.append(ep_reward)
-                # 记录episode奖励到TensorBoard
-                writer.add_scalar('Episode Reward', ep_reward, episode)
+                
+                if episode % 20 == 0:
+                    print('episode：', episode, 'step:', step, 'reward：', ep_reward, 'Out of safety    range：', done)
+                    print(f'###Mean_Reward: {np.mean(reward_all):.2f}')
 
             if done == True or suc == True or uns == True:
                 break
+
+        #将数据记录在Tensorboard上
+        writer.add_scalar('Episode Reward', ep_reward, episode)
+        writer.add_scalar('Mean Reward', np.mean(reward_all), episode)
+
     torch.save(dqn_red, 'net_combat2.pkl')
     print('DQN saved')
 
     plt.plot(np.arange(len(reward_all)), reward_all)
     plt.show()
-    writer.close()
+
 if __name__ == '__main__':
     train()
