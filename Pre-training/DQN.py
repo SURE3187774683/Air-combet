@@ -19,7 +19,7 @@ def seed_torch(seed=1029):
     torch.backends.cudnn.deterministic = True
     
 seed_torch()
-BATCH_SIZE = 256
+BATCH_SIZE = 32
 LR = 0.0001  #Learning rate
 GAMMA = 0.90  #Discount factor, discount for future rewards
 EPSILON_START = 0.90  #Initial epsilon in e-greedy policy
