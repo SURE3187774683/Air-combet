@@ -80,8 +80,8 @@ def train():
                 d.append(done)
                 reward_all.append(ep_reward)
                 
-                if episode % 20 == 0:
-                    print('episode：', episode, 'step:', step, 'reward：', ep_reward, 'Out of safety    range：', done)
+                if episode % 10000 == 0:
+                    print('episode：', episode, 'step:', step, 'reward：', ep_reward, 'Out of safety range：', done)
                     print(f'###Mean_Reward: {np.mean(reward_all):.2f}')
 
             if done == True or suc == True or uns == True:
@@ -90,6 +90,7 @@ def train():
         #将数据记录在Tensorboard上
         writer.add_scalar('Episode Reward', ep_reward, episode)
         writer.add_scalar('Mean Reward', np.mean(reward_all), episode)
+        writer.add_scalar('Steps per Episode', step, episode)
 
     torch.save(dqn_red, 'net_combat2.pkl')
     print('DQN saved')

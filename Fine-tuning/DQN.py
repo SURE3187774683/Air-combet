@@ -19,7 +19,7 @@ def seed_torch(seed=1029):
     torch.backends.cudnn.deterministic = True
     
 seed_torch()
-BATCH_SIZE = 256
+BATCH_SIZE = 32
 LR = 0.0001  #Learning rate
 GAMMA = 0.90  #Discount factor, discount for future rewards
 EPSILON_START = 0.90  #Initial epsilon in e-greedy policy
@@ -58,7 +58,6 @@ class Net(nn.Module):
     def forward(self, x):
         # Move the input tensor to the GPU
         x = x.to(device='cuda')
-
         x = self.lif1(self.fc1(x))
         x = self.lif2(self.fc2(x))
         return self.fc3(x)
@@ -124,11 +123,19 @@ class DQN(object):
         reward_batch = torch.tensor(reward_batch, dtype=torch.float).to(device)
         next_state_batch = torch.tensor(np.array(next_state_batch),dtype=torch.float).to(device)
         done_batch = torch.tensor(np.float32(done_batch)).to(device)
-        q_values = self.policy_net(state_batch).gather(dim=1, index=action_batch).to(device)  # Calculate the Q (s_t, a) corresponding to the current state (s_t, a)
-        next_q_values = self.target_net(next_state_batch).max(1)[0].detach().to(device)  # Calculate the Q value corresponding to the state (s_t_, a) at the next moment
-        #Calculate the expected Q value. For the termination state, done_Batch [0]=1, corresponding expected_q_value equals reward
+
+        # Calculate the Q (s_t, a) corresponding to the current state (s_t, a)
+        q_values = self.policy_net(state_batch).gather(dim=1, index=action_batch)
+
+        # Calculate the Q value corresponding to the state (s_t_, a) at the next moment
+        next_q_values = self.target_net(next_state_batch).max(1)[0].detach()
+
+        # Calculate the expected Q value. For the termination state, done_Batch [0]=1, corresponding    expected_q_value equals reward
         expected_q_values = reward_batch + GAMMA * next_q_values * (1 - done_batch)
-        loss = nn.MSELoss()(q_values, expected_q_values.unsqueeze(1)).to(device)  # Calculating the loss
+
+        # Calculating the loss
+        loss = nn.MSELoss()(q_values, expected_q_values.unsqueeze(1))
+
         # Optimize update model
         self.optimizer.zero_grad()
         loss.backward()
