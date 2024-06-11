@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import time
@@ -18,16 +20,16 @@ class UavEnv(object):
 
     def __init__(self):
         self.action_space = [0, 1, 2, 3, 4, 5, 6]
-        self.n_actions = 7
-        self.n_features = 12
-        self.terminal = False
+        self.n_actions = 7      # action的维度是7
+        self.n_features = 12    # state的维度是12
+        self.dead = False       # 无人机是否正常行使
         self.success = False
         self.unsuccess = False
         self.demit = 40000
-        self.normalize1 = 1000
-        self.normalize2 = 10000
-        self.normalize3 = np.pi
-        self.normalize4 = 300
+        self.normalize1 = 1000  # 缩放大小的常数
+        self.normalize2 = 10000 # 缩放大小的常数
+        self.normalize3 = np.pi # 缩放大小的常数
+        self.normalize4 = 300   # 缩放大小的常数
         self.angle1 = 30 / 57.3 / 3.14
         self.angle2 = 120 / 57.3 / 3.14
 
@@ -40,79 +42,80 @@ class UavEnv(object):
     def step(self, action1, action2):
         # global observation_, rv, rh, rd, r1, r2, r3, reward
         # global Nx, Nz, fail, Nxb, Nzb, failb
-
-        theta = self.theta
-        v = self.v
+        
+        v = self.v      # 初始化red的状态
         x = self.x
         y = self.y
         z = self.z
+        theta = self.theta
         pusai = self.pusai
-
-        thetab = self.thetab
-        vb = self.vb
+        
+        vb = self.vb    # 初始化blue的状态
         xb = self.xb
         yb = self.yb
         zb = self.zb
+        thetab = self.thetab
         pusaib = self.pusaib
 
-        if action1 == 0:
+        if action1 == 0:    # Regular flight
             Nx = 0
             Nz = 1
             fail = 0
-        elif action1 == 1:
+        elif action1 == 1:  # Accelerated flight
             Nx = 2
             Nz = 1
             fail = 0
-        elif action1 == 2:
+        elif action1 == 2:  # Decelerated flight
             Nx = -2
             Nz = 1
             fail = 0
-        elif action1 == 3:
+        elif action1 == 3:  # Left turn
             Nx = 0
             Nz = 5
             fail = -np.pi / 3
-        elif action1 == 4:
+        elif action1 == 4:  # Right turn
             Nx = 0
             Nz = 5
             fail = np.pi / 3
-        elif action1 == 5:
+        elif action1 == 5:  # Pull up
             Nx = 0
             Nz = 5
             fail = 0
-        elif action1 == 6:
+        elif action1 == 6:  # Push down
             Nx = 0
             Nz = -5
             fail = 0
 
-        if action2 == 0:
+        if action2 == 0:    # Regular flight
             Nxb = 0
             Nzb = 1
             failb = 0
-        elif action2 == 1:
+        elif action2 == 1:  # Accelerated flight
             Nxb = 2
             Nzb = 1
             failb = 0
-        elif action2 == 2:
+        elif action2 == 2:  # Decelerated flight
             Nxb = -2
             Nzb = 1
             failb = 0
-        elif action2 == 3:
+        elif action2 == 3:  # Left turn
             Nxb = 0
             Nzb = 5
             failb = -np.pi / 3
-        elif action2 == 4:
+        elif action2 == 4:  # Right turn
             Nxb = 0
             Nzb = 5
             failb = np.pi / 3
-        elif action2 == 5:
+        elif action2 == 5:  # Pull up
             Nxb = 0
             Nzb = 5
             failb = 0
-        elif action2 == 6:
+        elif action2 == 6:  # Push down
             Nxb = 0
             Nzb = -5
             failb = 0
 
+        # 更新状态参数
         self.v = v + ((10 * (Nx - np.sin(theta))) + 10 * (
                 Nx - np.sin(theta + (10 / v * (Nz * np.cos(fail) - np.cos(theta))) * 1))) / 2 * 1
         self.x = x + (v * np.cos(theta) * np.cos(pusai) + (v + (10 * (Nx - np.sin(theta))) * 1) * np.cos(
@@ -147,8 +150,8 @@ class UavEnv(object):
                 vb + (10 * (Nxb - np.sin(thetab))) * 1) / np.cos(
             thetab + (10 / vb * (Nzb * np.cos(failb) - np.cos(thetab))) * 1)) / 2 * 1
        
-
-        self.d0 = np.sqrt((self.xb - self.x) ** 2 + (self.yb - self.y) ** 2 + (self.zb - self.z) ** 2)
+        # 计算两个无人机（UAV）之间的相对位置、速度向量、距离以及它们各自速度向量与相对位置向量的夹角
+        self.d0 = np.sqrt((self.xb - self.x) ** 2 + (self.yb - self.y) ** 2 + (self.zb - self.z) ** 2)  # red和blue之间的距离
     
         v_r_vector = [self.v * np.cos(self.theta) * np.cos(self.pusai), self.v * np.cos(self.theta) * np.sin(self.pusai), self.v * np.sin(self.theta)]
         v_b_vector = [self.vb * np.cos(self.thetab) * np.cos(self.pusaib), self.vb * np.cos(self.thetab) * np.sin(self.pusaib), self.vb * np.sin(self.thetab)]
@@ -167,7 +170,7 @@ class UavEnv(object):
 
         delh = self.z - self.zb
 
-        
+        # 确保无人机在飞行过程中不会超出其性能限制或安全高度和速度范围
         if self.v < 100 or self.v > 400 or self.z < 1000 or self.z > 10000 or self.vb < 100 or self.vb > 400 or self.zb < 1000 or self.zb > 10000:
             rf = 1
         else:
@@ -201,19 +204,16 @@ class UavEnv(object):
         else:
             rv = np.exp((300 - self.v) / 300)
 
+        # 结果奖励函数
         if self.d0 <= 5000 and np.abs(self.qr) < self.angle1 and np.abs(self.qb) > self.angle2:
-         
             self.success = True
-            # self.terminal = True
             r1 = 8
             print('Red win')
         else:
             r1 = 0
 
         if self.d0 <= 5000 and np.abs(self.qb) < self.angle1: 
-            
             self.unsuccess = True
-            # self.terminal = True
             r2 = -8
             print('Blue win')
         else:
@@ -229,7 +229,7 @@ class UavEnv(object):
                          self.z / self.normalize2, self.theta /self.normalize3,
                          self.pusai /self.normalize3]
 
-        return observation_, observation__, reward, rf, self.success, self.unsuccess, self.terminal
+        return observation_, observation__, reward, rf, self.success, self.unsuccess, self.dead
 
     def get_reward(self, reward):
         self.r.append(reward)
@@ -264,7 +264,6 @@ class UavEnv(object):
         return state_red, state_blue
 
     def get_state(self):
-
         x = self.x
         y = self.y
         z = self.z
@@ -275,50 +274,51 @@ class UavEnv(object):
         return x, y, z, xb, yb, zb
 
     def reset(self):
-        self.theta = 0
-        self.v = 200
-        self.pusai = np.pi/4
-        self.thetab = 0
-        self.vb = 200
+        self.v = 200        # 初始化red的状态
         self.x = 0
         self.y = 0
         self.z = 4000
+        self.theta = 0
+        self.pusai = np.pi/4
+   
+        self.vb = 200       # 初始化blue的状态
         self.xb = np.random.uniform(7000, 9000)
         self.yb = np.random.uniform(7000, 9000)
         self.zb = np.random.uniform(3800, 4200)
+        self.thetab = 0
         self.pusaib = np.random.uniform(-np.pi/2 , -np.pi)
 
+        # red和blue的state
         self.state_red = [self.x, self.y, self.z, self.v, self.theta, self.pusai]
         self.state_blue = [self.xb, self.yb, self.zb, self.v, self.thetab, self.pusaib]
 
-        self.terminal = False
-        self.success = False
-        self.unsuccess = False
+        self.dead = False       # 游戏未结束
+        self.success = False    # 游戏未成功
+        self.unsuccess = False  # 游戏未失败
 
-        obs= [self.state_red[0]/self.normalize1,self.state_red[1]/self.normalize1,self.state_red[2]/self.normalize2,self.state_red[3]/self.normalize4,
+        # red的observation
+        obs= [self.state_red[0]/self.normalize1,self.state_red[1]/self.normalize1,self. state_red[2]/self.normalize2,self.state_red[3]/self.normalize4,
                 self.state_red[4]/self.normalize3,self.state_red[5]/self.normalize3,self.state_blue[0]/self.normalize1,self.state_blue[1]/self.normalize1,
                 self.state_blue[2]/self.normalize2,self.state_blue[3]/self.normalize4,self.state_blue[4]/self.normalize3,self.state_blue[5]/self.normalize3]
-
+        # blue的observation
         obs_ = [self.state_blue[0]/self.normalize1,self.state_blue[1]/self.normalize1,self.state_blue[2]/self.normalize2,self.state_blue[3]/self.normalize4,
                 self.state_blue[4]/self.normalize3,self.state_blue[5]/self.normalize3,self.state_red[0]/self.normalize1,self.state_red[1]/self.normalize1,
                 self.state_red[2]/self.normalize2,self.state_red[3]/self.normalize4,self.state_red[4]/self.normalize3,self.state_red[5]/self.normalize3]
 
 
-        return obs, obs_,  self.terminal, self.success,self.unsuccess
+        return obs, obs_,  self.dead, self.success,self.unsuccess
 
     def draw(self, x, y, z, xb, yb, zb):
 
         mpl.rcParams['legend.fontsize'] = 10
         fig = plt.figure()
         ax = fig.add_subplot(projection='3d')
-        ax.scatter3D(0, 0, 4000, color="black", alpha=1, s=20)
-        ax.scatter3D(8000, 8000, 4000, color="green", alpha=1, s=20)
-        ax.plot(x, y, z, color="red")
-        ax.plot(xb, yb, zb, color="blue")
+        ax.scatter3D(0, 0, 4000, color="black", alpha=1, s=20, label='Starting Point')
+        ax.scatter3D(8000, 8000, 4000, color="green", alpha=1, s=20, label='Destination')
+        ax.plot(x.values.flatten(), y.values.flatten(), z.values.flatten(), color="red", label='UAV Path')
+        ax.plot(xb.values.flatten(), yb.values.flatten(), zb.values.flatten(), color="blue", label='Boundary')
         ax.legend()
         plt.show()
-
-
 
     def plot_reward(self, reward):
         import matplotlib.pyplot as plt

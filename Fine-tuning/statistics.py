@@ -91,7 +91,7 @@ class blue_brain(object):
 
         return f
 
-    def choose_action(self,state_red,state_blue):
+    def choose_action(self,state_red,state_blue):   # blue选择action的策略
         mq = []
         for i in range(7):
             Q = []
