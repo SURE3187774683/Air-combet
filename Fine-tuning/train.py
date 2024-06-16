@@ -1,9 +1,7 @@
-from sre_constants import SUCCESS
 import numpy as np
 import torch
 import pandas as pd
 import os
-
 from env_fine import UavEnv
 import time
 from statistics import blue_brain
@@ -18,19 +16,20 @@ def train():
     max_step = 40       # 每个回合的最大步数
     reward_all = []     # 所有回合的奖励
     d = []              # 每回合的完成状态
-    xdata = []
-    ydata = []
-    zdata = []
-    xbdata = []
-    ybdata = []
-    zbdata = []
     
     dqn_red = torch.load('/home/sure/RL-code/air_combat/Pre-training/pre_training_net.pkl') # 载入预训练的模型
     statistic = blue_brain  # 导入blue的策略
 
-    for episode in range(1, 15000):
+    for episode in range(1, 50000):
         observation, obs, ter, suc, uns = env.reset()   # 初始化env
-
+        
+        # 记录无人机轨迹
+        xdata = []
+        ydata = []
+        zdata = []
+        xbdata = []
+        ybdata = []
+        zbdata = []
         ep_reward = 0   # reward清零
 
         for step in range(max_step):
@@ -40,7 +39,6 @@ def train():
                 action1 = dqn_red.choose_action(observation)    # red的action
                 state_red, state_blue = env.now_state()         # 提取red和blue的状态
                 action2 = statistic().choose_action(state_blue, state_red)
-                # action2 = statistic().choose_action(obs, observation)
                 break
             observation_, obs_, reward, RF, suc, uns, dead = env.step(action1, action2)
 
@@ -87,14 +85,15 @@ def train():
 
             if suc == True :
                 env.draw(X, Y, Z, XB, YB, ZB)   # success时展示当前位姿
+                print("picture sived")
 
             if dead == True or suc == True or uns == True:
                 break
         
         writer.add_scalar('Episode Reward', ep_reward, episode)         # 记录每个回合的reward
         writer.add_scalar('Mean Reward', np.mean(reward_all), episode)  # 记录每个回合的reward的均值
-        writer.add_scalar('Step_Num per Episode', step, episode)           # 记录每回合的游戏轮数
-        writer.add_scalar('Death Rate', np.mean(d), episode)            # 记录每回合是否正常结束
+        writer.add_scalar('Step_Num per Episode', step, episode)        # 记录每回合的游戏轮数
+        writer.add_scalar('Survival Rate', 1 - np.mean(d), episode)     # 记录每回合是否正常结束
 
     torch.save(dqn_red, 'net_combat2.pkl')  # 保存模型
     print('DQN saved')

@@ -19,7 +19,7 @@ def seed_torch(seed=1029):
     torch.backends.cudnn.deterministic = True
     
 seed_torch()    #设置随机种子
-BATCH_SIZE = 256
+BATCH_SIZE = 16
 LR = 0.0001                     # 学习率
 GAMMA = 0.90                    # 折扣率
 EPSILON_START = 0.90            # epsilon的起始值

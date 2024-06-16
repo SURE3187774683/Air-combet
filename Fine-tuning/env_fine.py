@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib
-matplotlib.use('TkAgg')
-import matplotlib as mpl
+#matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import time
 
@@ -305,20 +304,20 @@ class UavEnv(object):
                 self.state_blue[4]/self.normalize3,self.state_blue[5]/self.normalize3,self.state_red[0]/self.normalize1,self.state_red[1]/self.normalize1,
                 self.state_red[2]/self.normalize2,self.state_red[3]/self.normalize4,self.state_red[4]/self.normalize3,self.state_red[5]/self.normalize3]
 
-
         return obs, obs_,  self.dead, self.success,self.unsuccess
 
     def draw(self, x, y, z, xb, yb, zb):
-
-        mpl.rcParams['legend.fontsize'] = 10
+        matplotlib.rcParams['legend.fontsize'] = 10
         fig = plt.figure()
         ax = fig.add_subplot(projection='3d')
-        ax.scatter3D(0, 0, 4000, color="black", alpha=1, s=20, label='Starting Point')
-        ax.scatter3D(8000, 8000, 4000, color="green", alpha=1, s=20, label='Destination')
-        ax.plot(x.values.flatten(), y.values.flatten(), z.values.flatten(), color="red", label='UAV Path')
-        ax.plot(xb.values.flatten(), yb.values.flatten(), zb.values.flatten(), color="blue", label='Boundary')
+        ax.scatter3D(0, 0, 4000, color="black", alpha=1, s=20)
+        ax.scatter3D(xb[0][0], yb[0][0], zb[0][0], color="green", alpha=1, s=20)
+        ax.plot(x.values.flatten(), y.values.flatten(), z.values.flatten(), color="red", label='Red UAV Path')
+        ax.plot(xb.values.flatten(), yb.values.flatten(), zb.values.flatten(), color="blue", label='Blue UAV Path')
         ax.legend()
-        plt.show()
+    
+        # 保存图像到本地
+        plt.savefig('uav_trajectory.png', dpi=300)
 
     def plot_reward(self, reward):
         import matplotlib.pyplot as plt
@@ -328,7 +327,5 @@ class UavEnv(object):
         plt.ylabel('reward')
         plt.show()
 
-
 if __name__ == '__main__':
     env = UavEnv()
-
