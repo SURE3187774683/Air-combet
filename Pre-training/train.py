@@ -2,7 +2,7 @@ from DQN import DQN
 from env_pre import Uav_Env
 import pandas as pd
 import numpy as np
-#import matplotlib
+import matplotlib
 #matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import time
@@ -10,31 +10,31 @@ import torch
 import random
 import os
 
-# Check if GPU is available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-TARGET_UPDATE = 4  #Update frequency of the target network
+TARGET_UPDATE = 32
 
 np.random.seed(1)
-def seed_torch(seed=1029):
+def seed_torch(seed=1029):  # 设随机种子
     random.seed(seed)
-    os.environ['PYTHONHASHSEED'] = str(seed)  #To prevent hash randomization, make the experiment reproducible
+    os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)  # if you are using multi-GPU.
+    torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
+
 seed_torch()
 
 def train():
     start = time.process_time()
     env = Uav_Env()
     dqn = DQN()
-    max_step = 40   #Maximum steps per episode
+    max_step = 40   # 回合最大游戏轮数
     reward_all = []
     for episode in range(1,3000):
-        observation,ter,suc,uns= env.reset()  #Initial episode, reset the scene
+        observation,ter,suc,uns= env.reset()  #初始化env
         s_store = []
         xdata = []
         ydata = []
@@ -48,35 +48,32 @@ def train():
                 observation = np.array(observation)
                 observation = observation
 
-                action1 = dqn.choose_action(observation)  #choose_action function gives actions based on observations
+                action1 = dqn.choose_action(observation)  # red选择action
 
                 break
-            observation_,  reward, RF, suc,uns, done = env.step(action1) #The agent obtains information such as status and rewards at the next moment
+            observation_,  reward, RF, suc,uns, dead = env.step(action1)
 
-            #state1 = env.get_state()
             if RF ==1 :
-                done =True
-                reward=reward-5          #Penalty for exceeding the safety range
+                dead =True
+                reward=reward-5          
             if step == max_step - 1 :
-                reward = reward-1       #Draw penalty
-            dqn.store_transition(observation, action1, reward, observation_,done) #Experience pool storage
+                reward = reward-1
+            dqn.store_transition(observation, action1, reward, observation_,dead) # 放入经验池
             observation = observation_
             dqn.learn()
             ep_reward += reward
-            # Move the DQN agent to the GPU
+
             dqn.policy_net = dqn.policy_net.to(device)
             dqn.target_net = dqn.target_net.to(device)
 
-            if (episode + 1) % TARGET_UPDATE == 0:  #Agent Target Network Update
+            if (episode + 1) % TARGET_UPDATE == 0:  # 更新目标网络
                 dqn.target_net.load_state_dict(dqn.policy_net.state_dict())
 
-
-            if done == True or step == max_step - 1 or suc ==True or uns == True:
-                print('episode：',episode,   'step:',step,   'reward：',ep_reward,'Out of safety range：',done)
+            if dead == True or step == max_step - 1 or suc ==True or uns == True:
+                print('episode：',episode,   'step:',step,   'reward：',ep_reward,'Out of safety range：',dead)
                 reward_all.append(ep_reward)
 
-
-            #if episode == 1837:
+            # 收集无人机轨迹坐标
             x, y, z, xb, yb, zb = env.get_state()
             xdata.append(x)
             X = pd.DataFrame(xdata)
@@ -91,15 +88,15 @@ def train():
             zbdata.append(zb)
             ZB = pd.DataFrame(zbdata)
 
-                #if step == max_step - 1 or suc == True or done == True or uns == True:
-            if suc == True:
+            if suc == True: # 当red取得胜利时
                 env.draw(X, Y, Z, XB, YB, ZB)
 
-            if done == True or suc ==True or uns == True:
+            if dead == True or suc ==True or uns == True:
                 break
 
     torch.save(dqn,'pre_training_net.pkl')
     print('DQN saved')
+
     end = time.process_time()
     print(end - start)
 
